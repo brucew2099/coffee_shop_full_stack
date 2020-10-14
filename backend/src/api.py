@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
 from flask_cors import CORS
+from typing import Dict
 
 from .database.models import db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
@@ -36,7 +37,7 @@ def get_drinks():
             "drinks": [drink.short() for drink in drinks]
         }), 200
     except:
-        abort(422)
+        abort(400)
 
 '''
 @DONE implement endpoint
@@ -48,7 +49,7 @@ def get_drinks():
 '''
 @app.route('/drinks-detail', methods=['Get'])
 @requires_auth('get:drinks-detail')
-def get_drinks_detail():
+def get_drinks_detail(f):
     try:
         drinks = Drink.query.all()
         return jsonify({
@@ -56,7 +57,7 @@ def get_drinks_detail():
             "drinks": [drink.long() for drink in drinks]
         }), 200
     except:
-        abort(422)
+        abort(400)
 
 '''
 @DONE implement endpoint
@@ -69,19 +70,23 @@ def get_drinks_detail():
 '''
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def create_drink(payload):
+def create_drink(f):
     drink_details = request.get_json()
 
     try:
-        drink = Drink(drink_details.get("title"), drink_details.get("recipe"))
+        drink = Drink()
+        recipe = drink_details.get("recipe", [{'name':'temp_name', 'part':'1','color':'white'}])
+
+        drink.title = drink_details.get("title", "temp_title")
+        drink.recipe = json.dumps(recipe)
+
         drink.insert()
+        return jsonify({
+            "success": True,
+            "drinks": [drink.long()]
+        }), 200
     except:
         abort(400)
-
-    return jsonify({
-        "success": True,
-        "drinks": [drink.long()]
-    }), 200
 
 '''
 @DONE implement endpoint
@@ -96,24 +101,25 @@ def create_drink(payload):
 '''
 @app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
-def update_drinks(id):
-    drink_details = request.get_json()
+def update_drinks(f, id):
+    drink_patch = request.get_json()
 
-    drink = Drink.query.filter(Drink.id == id).one_or_none()
-
-    if not drink:
-        abort(400)
-    
     try:
-        update_drink = Drink(drink_details.get("title"), drink_details.get("recipe"))
-        update_drink.update()
+        drink = Drink.query.filter(Drink.id == id).one_or_none()
+
+        if not drink:
+            abort(404)
+            
+        drink.title = drink_patch.get("title", "temp_title")
+        drink.recipe = json.dumps(drink_patch.get("recipe", [{'name':'temp_name', 'part':'1','color':'white'}]))
+
+        drink.update()
+        return jsonify({
+            "success": True,
+            "drinks": [drink.long()]
+        }), 200
     except:
         abort(400)
-
-    return jsonify({
-        "success": True,
-        "drinks": [drink.long()]
-    }), 200
 
 '''
 @DONE implement endpoint
@@ -127,24 +133,21 @@ def update_drinks(id):
 '''
 @app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drinks(id):
-    drink_details = request.get_json()
-
-    drink = Drink.query.filter(Drink.id == id).one_or_none()
-
-    if not drink:
-        abort(400)
+def delete_drinks(f, id):
     
     try:
-        delete_drink = Drink(drink_details.get("title"), drink_details.get("recipe"))
-        delete_drink.delete()
+        drink = Drink.query.filter(Drink.id == id).one_or_none()
+
+        if not drink:
+            abort(404)
+        else:
+            drink.delete()
+            return jsonify({
+                "success": True,
+                "drinks": [drink.long()]
+            }), 200
     except:
         abort(400)
-
-    return jsonify({
-        "success": True,
-        "drinks": [drink.long()]
-    }), 200
 
 ## Error Handling
 '''

@@ -20,6 +20,7 @@ def setup_db(app):
     db.init_app(app)
 
 '''
+
 db_drop_and_create_all()
     drops the database tables and starts fresh
     can be used to initialize a clean database
@@ -41,10 +42,6 @@ class Drink(db.Model):
     # the ingredients blob - this stores a lazy json blob
     # the required datatype is [{'color': string, 'name':string, 'parts':number}]
     recipe =  Column(String(180), nullable=False)
-
-    def __init__(self, title, recipe):
-        self.title = title
-        self.recipe = recipe
 
     '''
     short()

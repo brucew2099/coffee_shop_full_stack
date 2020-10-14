@@ -7,7 +7,7 @@ from urllib.request import urlopen
 
 AUTH0_DOMAIN = 'skittishloki.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'udaci_service'
+API_AUDIENCE = 'https://localhost:5000'
 
 ## AuthError Exception
 '''
@@ -71,7 +71,7 @@ def check_permissions(permission, payload):
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Permission not found'
-        }, 403)
+        }, 401)
     return True
 
 '''
